@@ -2,10 +2,14 @@
     "version": 2,
     "builds": [
       { "src": "src/server.js", "use": "@vercel/node" },
-      { "src": "public/**", "use": "@vercel/static" }
+      { "src": "public/**/*", "use": "@vercel/static" }
     ],
     "routes": [
-      { "src": "/api/socketio", "dest": "api/socketio.js" },
-      { "src": "/(.*)", "dest": "src/server.js" }
+      { "src": "/socket.io", "dest": "api/socket.io.js" },
+      { "src": "/js/(.*)", "dest": "/public/js/$1" },
+      { "src": "/css/(.*)", "dest": "/public/css/$1" },
+      { "src": "/admin", "dest": "/public/admin.html" },
+      { "src": "/leaderboard", "dest": "/public/leaderboard.html" },
+      { "src": "/(.*)", "dest": "/src/server.js" }
     ]
   }
