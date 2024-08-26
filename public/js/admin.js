@@ -1,5 +1,6 @@
-const socket = io();
-
+const socket = io({
+    transports: ['websocket', 'polling']
+  });
 const playerList = document.getElementById('player-list');
 const startGameButton = document.getElementById('start-game');
 const promptSelect = document.getElementById('prompt-select');

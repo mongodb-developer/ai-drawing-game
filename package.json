@@ -2,10 +2,13 @@
   "name": "mongodb-aws-drawing-game",
   "version": "1.0.0",
   "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
-  },
+"scripts": {
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js"
+},
+"engines": {
+  "node": ">14.x"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

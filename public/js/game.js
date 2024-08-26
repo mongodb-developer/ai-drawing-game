@@ -1,4 +1,6 @@
-const socket = io();
+const socket = io({
+    transports: ['websocket', 'polling']
+  });
 
 let playerName = localStorage.getItem('playerName') || '';
 
