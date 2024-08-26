@@ -64,4 +64,9 @@ app.get('/leaderboard', adminAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/leaderboard.html'));
 });
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  });
+  
+
 module.exports = app;
