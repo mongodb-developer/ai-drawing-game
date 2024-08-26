@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Multiplayer Drawing Game</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="leaderboard-container">
+        <h1>Leaderboard</h1>
+        <div class="leaderboard-section">
+            <h2>Ongoing Games</h2>
+            <div id="ongoing-games"></div>
+        </div>
+        <div class="leaderboard-section">
+            <h2>Recent Game Results</h2>
+            <div id="recent-results"></div>
+        </div>
+    </div>
+
+    <script>
+
+        async function fetchLeaderboard() {
+            try {
+                const response = await fetch(`/api/leaderboard`);
+                if (!response.ok) {
+                    throw new Error('Unauthorized');
+                }
+                const leaderboard = await response.json();
+                displayLeaderboard(leaderboard);
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+            }
+        }
+
+        function displayLeaderboard(leaderboard) {
+            const container = document.getElementById('leaderboard-container');
+            container.innerHTML = leaderboard.map(entry => `
+                <div>
+                    <h3>${entry.playerName}</h3>
+                    <p>Score: ${entry.score}</p>
+                </div>
+            `).join('');
+        }
+
+        fetchLeaderboard();
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/leaderboard.js"></script>
+</body>
+</html>

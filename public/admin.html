@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Multiplayer Drawing Game</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div id="admin-container">
+        <h1>Admin Dashboard</h1>
+        
+        <!-- <div id="prompts-container"></div> -->
+    
+        <div id="waiting-players">
+            <h2>Waiting Players</h2>
+            <ul id="player-list"></ul>
+        </div>
+    
+        <div id="game-control">
+            <h2>Game Control</h2>
+            <select id="prompt-select">
+                <option value="">Select a prompt</option>
+            </select>
+            <button id="start-game" disabled>Start Game</button>
+        </div>
+    
+        <div id="active-game" style="display: none;">
+            <h2>Active Game</h2>
+            <p id="current-prompt"></p>
+            <button id="end-game">End Game</button>
+        </div>
+    
+        <div id="game-results" style="display: none;">
+            <h2>Game Results</h2>
+            <ol id="results-list"></ol>
+        </div>
+    
+        <a id="leaderboard-link" href="/leaderboard" target="_blank">View Leaderboard</a>
+    
+        <button id="sync-button">Sync Game Sessions</button>
+        <div id="ongoing-games"></div>
+        <div id="recent-results"></div>
+    </div>
+    
+    <div id="workflow-cards-container"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/workflowCards.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+</html>

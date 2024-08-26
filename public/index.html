@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multiplayer Drawing Game</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Multiplayer Drawing Game</h1>
+        <button id="info-button" class="info-button">ℹ️ How It Works</button>
+        <div id="login-screen">
+            <input type="text" id="player-name" placeholder="Enter your name">
+            <button id="join-game">Join Game</button>
+        </div>
+        <div id="waiting-room" style="display: none;">
+            <h2>Waiting for players...</h2>
+            <ul id="player-list"></ul>
+        </div>
+        <div id="game-screen" style="display: none;">
+            <h2 id="prompt"></h2>
+            <canvas id="drawing-canvas"></canvas>
+            <div id="canvas-controls">
+                <button id="undo-button">Undo</button>
+                <button id="clear-button">Clear</button>
+                <button id="submit-drawing">Submit Drawing</button>
+            </div>
+        </div>
+        <div id="results-screen" style="display: none;">
+            <h2>Game Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <div id="workflow-cards-container"></div>
+
+    <div id="info-modal" class="modal"  style="display: none;"">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>How It Works</h2>
+            <p>This game uses cutting-edge technologies to analyze your drawings:</p>
+            <h3>MongoDB Vector Search</h3>
+            <p>We use MongoDB Vector Search to compare your drawing to the prompt. It converts the labels of your drawing into a vector and finds the most similar vectors in our database.</p>
+            <a href="https://www.mongodb.com/docs/atlas/atlas-search/vector-search/" target="_blank">Learn more about MongoDB Vector Search</a>
+            <h3>AWS Rekognition</h3>
+            <p>AWS Rekognition analyzes your drawing to identify objects and scenes. It provides labels that we use to create the vector representation of your drawing.</p>
+            <a href="https://aws.amazon.com/rekognition/" target="_blank">Learn more about AWS Rekognition</a>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/workflowCards.js"></script>
+    <script src="/js/game.js"></script>
+</body>
+</html>
