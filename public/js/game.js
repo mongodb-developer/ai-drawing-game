@@ -1,10 +1,9 @@
 const socket = io({
-    transports: ['websocket', 'polling']
-  });
+    transports: ['polling']
+});
 
 let playerName = localStorage.getItem('playerName') || '';
 
-// Function to safely get DOM elements
 function getElement(id) {
     const element = document.getElementById(id);
     if (!element) {
@@ -25,7 +24,7 @@ const canvas = getElement('drawing-canvas');
 const submitDrawingButton = getElement('submit-drawing');
 const undoButton = getElement('undo-button');
 const clearButton = getElement('clear-button');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
 const infoButton = getElement('info-button');
 const infoModal = getElement('info-modal');
@@ -37,12 +36,19 @@ let currentAction = [];
 let currentGameSessionId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (canvas) {
+        resizeCanvas();
+        initCanvas();
+    }
     const workflowCardsContainer = document.getElementById('workflow-cards-container');
-    createWorkflowCards(workflowCardsContainer);
-    updateWorkflowStage('player-login');
+    if (workflowCardsContainer && typeof createWorkflowCards === 'function') {
+        createWorkflowCards(workflowCardsContainer);
+    }
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('player-login');
+    }
 });
 
-// Info modal functionality
 if (infoButton && infoModal) {
     infoButton.onclick = function() {
         infoModal.style.display = "block";
@@ -62,6 +68,7 @@ window.onclick = function(event) {
 }
 
 function resizeCanvas() {
+    if (!canvas) return;
     const containerWidth = canvas.parentElement.clientWidth;
     canvas.width = containerWidth;
     canvas.height = containerWidth;
@@ -69,6 +76,7 @@ function resizeCanvas() {
 }
 
 function initCanvas() {
+    if (!ctx) return;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'black';
@@ -79,7 +87,7 @@ function initCanvas() {
 
 setInterval(() => {
     socket.emit('heartbeat');
-}, 30000); // every 30 seconds
+}, 30000);
 
 socket.on('heartbeat', () => {
     console.log('Heartbeat received from server');
@@ -97,41 +105,47 @@ socket.on('reconnect', () => {
 });
 
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-initCanvas();
 
 if (joinGameButton) {
     joinGameButton.addEventListener('click', () => {
         if (!playerNameInput) return;
         playerName = playerNameInput.value.trim();
         if (playerName) {
-            localStorage.setItem('playerName', playerName); // Store the player name
+            localStorage.setItem('playerName', playerName);
             socket.emit('joinGame', { playerName });
             if (loginScreen) loginScreen.style.display = 'none';
             if (waitingRoom) waitingRoom.style.display = 'block';
-            updateWorkflowStage('waiting-for-game');
+            if (typeof updateWorkflowStage === 'function') {
+                updateWorkflowStage('waiting-for-game');
+            }
         }
     });
 }
 
 socket.on('playerJoined', ({ playerName, players, gameSessionId }) => {
-    playerList.innerHTML = players.map(player => `<li>${player}</li>`).join('');
+    if (playerList) {
+        playerList.innerHTML = players.map(player => `<li>${player}</li>`).join('');
+    }
     currentGameSessionId = gameSessionId;
 });
 
 socket.on('gameStarted', ({ promptName, promptDescription, gameSessionId }) => {
-    waitingRoom.style.display = 'none';
-    gameScreen.style.display = 'block';
-    promptElement.innerHTML = `<strong>Draw:</strong> ${promptName}<br><em>${promptDescription}</em>`;
+    if (waitingRoom) waitingRoom.style.display = 'none';
+    if (gameScreen) gameScreen.style.display = 'block';
+    if (promptElement) {
+        promptElement.innerHTML = `<strong>Draw:</strong> ${promptName}<br><em>${promptDescription}</em>`;
+    }
     resizeCanvas();
     initCanvas();
     drawingActions = [];
     currentGameSessionId = gameSessionId;
-    updateWorkflowStage('game-started');
-
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('game-started');
+    }
 });
 
 function getPosition(event) {
+    if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -154,43 +168,41 @@ function startDrawing(event) {
     const { x, y } = getPosition(event);
     currentAction = [{ x, y }];
     draw(event);
-    updateWorkflowStage('player-draws');
-
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('player-draws');
+    }
 }
 
 function draw(event) {
-    if (!isDrawing) return;
-
+    if (!isDrawing || !ctx) return;
     event.preventDefault();
-
     const { x, y } = getPosition(event);
-
     ctx.lineTo(x, y);
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(x, y);
-
     currentAction.push({ x, y });
 }
 
 function stopDrawing() {
     if (!isDrawing) return;
     isDrawing = false;
-    ctx.beginPath();
+    if (ctx) ctx.beginPath();
     if (currentAction.length > 1) {
         drawingActions.push(currentAction);
         currentAction = [];
     }
 }
 
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing);
-
-canvas.addEventListener('touchstart', startDrawing);
-canvas.addEventListener('touchmove', draw);
-canvas.addEventListener('touchend', stopDrawing);
+if (canvas) {
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+}
 
 function undo() {
     if (drawingActions.length === 0) return;
@@ -204,6 +216,7 @@ function clearCanvas() {
 }
 
 function redrawCanvas() {
+    if (!ctx || !canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     initCanvas();
     drawingActions.forEach(action => {
@@ -216,51 +229,56 @@ function redrawCanvas() {
     });
 }
 
-undoButton.addEventListener('click', undo);
-clearButton.addEventListener('click', clearCanvas);
+if (undoButton) undoButton.addEventListener('click', undo);
+if (clearButton) clearButton.addEventListener('click', clearCanvas);
 
-submitDrawingButton.addEventListener('click', async () => {
-    const drawing = canvas.toDataURL('image/png');
-    const blob = await (await fetch(drawing)).blob();
-    const file = new File([blob], "drawing.png", { type: "image/png" });
+if (submitDrawingButton) {
+    submitDrawingButton.addEventListener('click', async () => {
+        if (!canvas) return;
+        const drawing = canvas.toDataURL('image/png');
+        const blob = await (await fetch(drawing)).blob();
+        const file = new File([blob], "drawing.png", { type: "image/png" });
 
-    const formData = new FormData();
-    formData.append('drawing', file);
-    updateWorkflowStage('player-submits');
-
-    try {
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
-        const data = await response.json();
-        if (data.success) {
-            socket.emit('submitDrawing', { playerName, filename: data.filename, gameSessionId: currentGameSessionId }, (response) => {
-                if (response.success) {
-                    console.log('Drawing submitted successfully');
-                    console.log('Labels:', response.labels);
-                    console.log('Score:', response.score);
-                    submitDrawingButton.disabled = true;
-                    submitDrawingButton.textContent = 'Drawing Submitted!';
-                } else {
-                    console.error('Failed to submit drawing:', response.error);
-                    alert('Failed to submit drawing. Please try again.');
-                }
-            });
-        } else {
-            console.error('Failed to upload drawing:', data.error);
-            alert('Failed to upload drawing. Please try again.');
+        const formData = new FormData();
+        formData.append('drawing', file);
+        if (typeof updateWorkflowStage === 'function') {
+            updateWorkflowStage('player-submits');
         }
-    } catch (error) {
-        console.error('Error uploading drawing:', error);
-        alert('Error uploading drawing. Please try again.');
-    }
-});
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await response.json();
+            if (data.success) {
+                socket.emit('submitDrawing', { playerName, filename: data.filename, gameSessionId: currentGameSessionId }, (response) => {
+                    if (response.success) {
+                        console.log('Drawing submitted successfully');
+                        console.log('Labels:', response.labels);
+                        console.log('Score:', response.score);
+                        submitDrawingButton.disabled = true;
+                        submitDrawingButton.textContent = 'Drawing Submitted!';
+                    } else {
+                        console.error('Failed to submit drawing:', response.error);
+                        alert('Failed to submit drawing. Please try again.');
+                    }
+                });
+            } else {
+                console.error('Failed to upload drawing:', data.error);
+                alert('Failed to upload drawing. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error uploading drawing:', error);
+            alert('Error uploading drawing. Please try again.');
+        }
+    });
+}
 
 socket.on('drawingReceived', ({ score, labels }) => {
     console.log('Drawing received by server. Score:', score);
     console.log('Detected labels:', labels);
-    
+
     const labelsDisplay = document.createElement('div');
     labelsDisplay.innerHTML = `
         <h3>Detected Labels:</h3>
@@ -269,48 +287,50 @@ socket.on('drawingReceived', ({ score, labels }) => {
         </ul>
         <p>Your drawing has been submitted. Please wait for the game to end.</p>
     `;
-    updateWorkflowStage('rekognition-analysis');
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('rekognition-analysis');
+    }
 
     const resultsElement = document.getElementById('results');
-    resultsElement.innerHTML = '';
-    resultsElement.appendChild(labelsDisplay);
-    
+    if (resultsElement) {
+        resultsElement.innerHTML = '';
+        resultsElement.appendChild(labelsDisplay);
+    }
+
     alert(`Your drawing has been received! Please wait for the game to end.`);
 });
 
 socket.on('gameEnded', ({ results, gameSessionId }) => {
     console.log('Game ended. Results:', results);
-    
-    // Hide game screen and show results screen
+
     if (gameScreen) gameScreen.style.display = 'none';
     if (resultsScreen) resultsScreen.style.display = 'block';
-    
+
     const resultsElement = getElement('results');
     if (resultsElement) {
-        // Find this player's score
         const playerResult = results.find(result => result.playerName === playerName);
         let resultHTML = `<h2>Game Over!</h2>`;
-        
+
         if (playerResult) {
             resultHTML += `<h3>Your Score: ${playerResult.score} points</h3>`;
         } else {
             resultHTML += `<h3>Your Score: N/A</h3>`;
         }
-        
-        // Display all results
+
         resultHTML += '<h4>All Scores:</h4>';
         resultHTML += '<ul>' + results.map(result => 
             `<li>${result.playerName}: ${result.score} points</li>`
         ).join('') + '</ul>';
-        
+
         resultsElement.innerHTML = resultHTML;
     }
-    
-    updateWorkflowStage('vector-comparison');
+
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('vector-comparison');
+    }
 
     currentGameSessionId = null;
 
-    // Notify the player that the game has ended and show their score
     const playerResult = results.find(result => result.playerName === playerName);
     if (playerResult) {
         alert(`The game has ended! Your score: ${playerResult.score} points. Check the results screen for all scores.`);

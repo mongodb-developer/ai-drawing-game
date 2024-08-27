@@ -1,6 +1,7 @@
 const socket = io({
-    transports: ['websocket', 'polling']
-  });
+    transports: ['polling']
+});
+
 const playerList = document.getElementById('player-list');
 const startGameButton = document.getElementById('start-game');
 const promptSelect = document.getElementById('prompt-select');
@@ -10,42 +11,45 @@ const endGameButton = document.getElementById('end-game');
 const gameResults = document.getElementById('game-results');
 const resultsList = document.getElementById('results-list');
 const leaderboardLink = document.getElementById('leaderboard-link');
-
-let selectedPrompt = null;
 const syncButton = document.getElementById('sync-button');
 
-syncButton.addEventListener('click', () => {
-  socket.emit('syncGameSessions');
-});
+let selectedPrompt = null;
+
+if (syncButton) {
+    syncButton.addEventListener('click', () => {
+        socket.emit('syncGameSessions');
+    });
+}
 
 socket.on('gameSessionsUpdated', (updatedGames) => {
-  updateOngoingGames(updatedGames);
+    updateOngoingGames(updatedGames);
 });
 
 function updateOngoingGames(games) {
     const ongoingGamesElement = document.getElementById('ongoing-games');
+    if (!ongoingGamesElement) return;
     ongoingGamesElement.innerHTML = games.map(game => `
       <div class="game-item">
         <h3>Game #${game.id}</h3>
         <p>Players: ${game.players.join(', ')}</p>
         <p>Prompt: ${game.prompt}</p>
         <p>Status: ${game.status}</p>
-      </div>
+        </div>
     `).join('');
-  }
+}
 
 async function fetchPrompts() {
     try {
         const response = await fetch(`/api/prompts`);
         console.log('Response status:', response.status);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         console.log('Response data:', data);
-        
+
         displayPrompts(data);
         populatePromptSelect(data);
     } catch (error) {
@@ -68,41 +72,8 @@ function displayPrompts(prompts) {
     }
 }
 
-async function endGame(io, session) {
-    try {
-      session.status = 'ended';
-      session.endTime = new Date();
-      
-      const results = session.submissions.map(sub => ({
-        playerName: sub.playerName,
-        score: sub.score
-      }));
-      
-      await session.save();
-      
-      io.to(session._id.toString()).emit('gameEnded', { results, gameSessionId: session._id });
-      io.emit('adminGameEnded', { results, gameSessionId: session._id });
-  
-      ongoingGames.delete(session._id.toString());
-      
-      recentResults.unshift({
-        id: session._id.toString(),
-        prompt: session.prompt.name,
-        players: results
-      });
-      if (recentResults.length > 5) recentResults.pop();
-  
-      emitLeaderboardUpdate(io);
-  
-      // Sync game sessions after ending a game
-      const updatedGames = await syncGameSessions();
-      io.emit('gameSessionsUpdated', updatedGames);
-    } catch (error) {
-      console.error('Error ending game:', error);
-    }
-  }
-
 function populatePromptSelect(prompts) {
+    if (!promptSelect) return;
     promptSelect.innerHTML = '<option value="">Select a prompt</option>'; 
     prompts.forEach(prompt => {
         const option = document.createElement('option');
@@ -115,73 +86,101 @@ function populatePromptSelect(prompts) {
 document.addEventListener('DOMContentLoaded', () => {
     fetchPrompts();
     const workflowCardsContainer = document.getElementById('workflow-cards-container');
-    createWorkflowCards(workflowCardsContainer);
-    updateWorkflowStage('player-login');
+    if (workflowCardsContainer && typeof createWorkflowCards === 'function') {
+        createWorkflowCards(workflowCardsContainer);
+    }
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('player-login');
+    }
 });
 
-promptSelect.addEventListener('change', (e) => {
-    selectedPrompt = e.target.value;
-    startGameButton.disabled = !selectedPrompt;
-});
+if (promptSelect) {
+    promptSelect.addEventListener('change', (e) => {
+        selectedPrompt = e.target.value;
+        if (startGameButton) startGameButton.disabled = !selectedPrompt;
+    });
+}
 
 socket.on('playerJoined', ({ players }) => {
-    playerList.innerHTML = players.map(player => `<li>${player}</li>`).join('');
-    updateWorkflowStage('waiting-for-game');
+    if (playerList) {
+        playerList.innerHTML = players.map(player => `<li>${player}</li>`).join('');
+    }
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('waiting-for-game');
+    }
 });
 
 socket.on('drawingAnalyzed', ({ playerName }) => {
     console.log(`Drawing from ${playerName} analyzed`);
-    updateWorkflowStage('rekognition-analysis');
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('rekognition-analysis');
+    }
 });
 
 socket.on('drawingReceived', ({ playerName }) => {
     console.log(`Drawing received from ${playerName}`);
-    updateWorkflowStage('player-submits');
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('player-submits');
+    }
 });
 
 socket.on('adminGameEnded', ({ results, gameSessionId }) => {
     const recentResultsElement = document.getElementById('recent-results');
-    recentResultsElement.innerHTML = `
-      <h3>Most Recent Game Results (Game #${gameSessionId}):</h3>
-      <ol>
-        ${results.map(result => `<li>${result.playerName}: ${result.score} points</li>`).join('')}
-      </ol>
-    `;
-  });
-
-startGameButton.addEventListener('click', () => {
-    if (selectedPrompt) {
-        socket.emit('startGame', { promptId: selectedPrompt });
-        activeGame.style.display = 'block';
-        currentPrompt.textContent = `Current Prompt: ${promptSelect.options[promptSelect.selectedIndex].text}`;
-        startGameButton.disabled = true;
-        promptSelect.disabled = true;
-        console.log('Starting game with prompt ID:', selectedPrompt); 
-        updateWorkflowStage('game-started');
+    if (recentResultsElement) {
+        recentResultsElement.innerHTML = `
+          <h3>Most Recent Game Results (Game #${gameSessionId}):</h3>
+          <ol>
+            ${results.map(result => `<li>${result.playerName}: ${result.score} points</li>`).join('')}
+          </ol>
+        `;
     }
 });
 
-endGameButton.addEventListener('click', () => {
-    socket.emit('endGame');
-    activeGame.style.display = 'none';
-    gameResults.style.display = 'block';
-    startGameButton.disabled = false;
-    promptSelect.disabled = false;
-    leaderboardLink.style.display = 'block'; // Show the leaderboard link
-});
+if (startGameButton) {
+    startGameButton.addEventListener('click', () => {
+        if (selectedPrompt) {
+            socket.emit('startGame', { promptId: selectedPrompt });
+            if (activeGame) activeGame.style.display = 'block';
+            if (currentPrompt && promptSelect) {
+                currentPrompt.textContent = `Current Prompt: ${promptSelect.options[promptSelect.selectedIndex].text}`;
+            }
+            if (startGameButton) startGameButton.disabled = true;
+            if (promptSelect) promptSelect.disabled = true;
+            console.log('Starting game with prompt ID:', selectedPrompt); 
+            if (typeof updateWorkflowStage === 'function') {
+                updateWorkflowStage('game-started');
+            }
+        }
+    });
+}
+
+if (endGameButton) {
+    endGameButton.addEventListener('click', () => {
+        socket.emit('endGame');
+        if (activeGame) activeGame.style.display = 'none';
+        if (gameResults) gameResults.style.display = 'block';
+        if (startGameButton) startGameButton.disabled = false;
+        if (promptSelect) promptSelect.disabled = false;
+        if (leaderboardLink) leaderboardLink.style.display = 'block';
+    });
+}
 
 socket.on('gameEnded', (results) => {
-    resultsList.innerHTML = results.map(result => 
-        `<li>${result.playerName}: ${result.score} points</li>`
-    ).join('');
-    gameResults.style.display = 'block';
-    activeGame.style.display = 'none';
-    updateWorkflowStage('vector-comparison');
+    if (resultsList) {
+        resultsList.innerHTML = results.map(result => 
+            `<li>${result.playerName}: ${result.score} points</li>`
+        ).join('');
+    }
+    if (gameResults) gameResults.style.display = 'block';
+    if (activeGame) activeGame.style.display = 'none';
+    if (typeof updateWorkflowStage === 'function') {
+        updateWorkflowStage('vector-comparison');
+    }
 });
 
 socket.on('newGameSession', () => {
-    gameResults.style.display = 'none';
-    resultsList.innerHTML = '';
-    promptSelect.value = '';
+    if (gameResults) gameResults.style.display = 'none';
+    if (resultsList) resultsList.innerHTML = '';
+    if (promptSelect) promptSelect.value = '';
     selectedPrompt = null;
 });

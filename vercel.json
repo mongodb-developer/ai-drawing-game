@@ -5,7 +5,7 @@
       { "src": "public/**/*", "use": "@vercel/static" }
     ],
     "routes": [
-      { "src": "/socket.io", "dest": "api/socket.io.js" },
+      { "src": "/api/socketio", "dest": "api/socketio.js" },
       { "src": "/js/(.*)", "dest": "/public/js/$1" },
       { "src": "/css/(.*)", "dest": "/public/css/$1" },
       { "src": "/admin", "dest": "/public/admin.html" },

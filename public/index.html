@@ -2,26 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Multiplayer Drawing Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI MongoDB / AWS Drawing Game</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/workflowCards.js"></script>
-    <script src="/js/game.js"></script>
-
 </head>
 <body>
     <div id="game-container">
         <h1>AI MongoDB / AWS Drawing Game</h1>
-        <button id="info-button" class="info-button">ℹ️ How It Works</button>
+        <button id="info-button">ℹ️ How It Works</button>
+
         <div id="login-screen">
             <input type="text" id="player-name" placeholder="Enter your name">
             <button id="join-game">Join Game</button>
         </div>
+
         <div id="waiting-room" style="display: none;">
             <h2>Waiting for players...</h2>
             <ul id="player-list"></ul>
         </div>
+
         <div id="game-screen" style="display: none;">
             <h2 id="prompt"></h2>
             <canvas id="drawing-canvas"></canvas>
@@ -31,6 +30,7 @@
                 <button id="submit-drawing">Submit Drawing</button>
             </div>
         </div>
+
         <div id="results-screen" style="display: none;">
             <h2>Game Results</h2>
             <div id="results"></div>
@@ -39,7 +39,7 @@
 
     <div id="workflow-cards-container"></div>
 
-    <div id="info-modal" class="modal"  style="display: none;"">
+    <div id="info-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>How It Works</h2>
@@ -53,10 +53,9 @@
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+
     <script src="/js/workflowCards.js"></script>
     <script src="/js/game.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
 </body>
 </html>

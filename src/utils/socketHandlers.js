@@ -11,6 +11,7 @@ function emitLeaderboardUpdate(io) {
     ongoingGames: Array.from(ongoingGames.values()),
     recentResults
   });
+  console.log('Leaderboard updated');
 }
 
 async function syncGameSessions() {
