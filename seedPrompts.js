@@ -1,6 +1,6 @@
 async function seedPrompts() {
     try {
-        await mongoose.connect(config.mongodbUri, { useNewUrlParser: true, useUnifiedTopology: true });
+        await mongoose.connect(config.mongodbUri, {  });
         console.log('Connected to MongoDB');
 
         for (let prompt of prompts) {

@@ -8,7 +8,7 @@ const setupSocketHandlers = require('./utils/socketHandlers');
 const server = http.createServer(app);
 const io = socketIo(server);
 
-mongoose.connect(config.mongodbUri + '/drawing_game', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(config.mongodbUri + '/drawing_game', {  })
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
